@@ -1,19 +1,100 @@
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useEffect, useState } from "react";
 
-export default function Home() {
-  const { data: session } = useSession();
+export default function Dashboard() {
+  // Destructure both data and status
+  const { data: session, status } = useSession();
+  const [userData, setUserData] = useState(null);
+  const [error, setError] = useState(null);
 
-  if (session) {
+  // Debug logging (optional) to see what status and session are:
+  useEffect(() => {
+    console.log("Session status:", status, "session:", session);
+  }, [status, session]);
+
+  // When authenticated, fetch Twitch user info
+  useEffect(() => {
+    // Only run when session is ready and authenticated
+    if (status !== "authenticated") return;
+
+    async function fetchUser() {
+      setError(null);
+      setUserData(null);
+      try {
+        const res = await fetch("/api/twitchUser", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: session.accessToken }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          setError(errorData.error || `Failed to fetch user: ${res.status}`);
+          return;
+        }
+        const data = await res.json();
+        // Expect data.data to be an array from Twitch API
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          setUserData(data.data[0]);
+        } else {
+          setError("No user data returned");
+        }
+      } catch (e) {
+        console.error("Fetch error:", e);
+        setError("Network error fetching user");
+      }
+    }
+
+    fetchUser();
+  }, [status, session]);
+
+  // Render based on status
+  if (status === "loading") {
+    // NextAuth is still checking session (e.g., reading cookie, verifying)
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    // Not signed in: prompt to sign in
     return (
-      <div>
-        <p>Signed in as {session.user.name}</p>
-        <button onClick={() => signOut()}>Sign out</button>
+      <div style={{ padding: "2rem", fontFamily: "Arial" }}>
+        <p>You are not signed in.</p>
+        <button onClick={() => signIn("twitch")}>Sign in with Twitch</button>
       </div>
     );
   }
+
+  // status === "authenticated" from here on
   return (
-    <div>
-      <button onClick={() => signIn("twitch")}>Sign in with Twitch</button>
+    <div style={{ padding: "2rem", fontFamily: "Arial" }}>
+      <p>Signed in as {session.user.name || session.user.email}</p>
+      <button onClick={() => signOut()}>Sign out</button>
+
+      {error && (
+        <p style={{ color: "red", marginTop: "1rem" }}>
+          Error fetching Twitch profile: {error}
+        </p>
+      )}
+
+      {userData ? (
+        <div style={{ marginTop: "1rem" }}>
+          <h2>Twitch Profile</h2>
+          <p>
+            <strong>Display Name:</strong> {userData.display_name}
+          </p>
+          {userData.profile_image_url && (
+            <img
+              src={userData.profile_image_url}
+              alt={`${userData.display_name} profile`}
+              width={100}
+              height={100}
+              style={{ borderRadius: "50%", marginTop: "0.5rem" }}
+            />
+          )}
+        </div>
+      ) : !error ? (
+        // If authenticated but userData not yet loaded and no error
+        <p style={{ marginTop: "1rem" }}>Loading Twitch profile...</p>
+      ) : null}
     </div>
   );
 }
