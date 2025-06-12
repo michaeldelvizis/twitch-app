@@ -66,9 +66,6 @@ export default function Dashboard() {
   // status === "authenticated" from here on
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <p>Signed in as {session.user.name || session.user.email}</p>
-      <button onClick={() => signOut()}>Sign out</button>
-
       {error && (
         <p style={{ color: "red", marginTop: "1rem" }}>
           Error fetching Twitch profile: {error}
@@ -77,24 +74,20 @@ export default function Dashboard() {
 
       {userData ? (
         <div style={{ marginTop: "1rem" }}>
-          <h2>Twitch Profile</h2>
-          <p>
-            <strong>Display Name:</strong> {userData.display_name}
-          </p>
-          {userData.profile_image_url && (
-            <img
-              src={userData.profile_image_url}
-              alt={`${userData.display_name} profile`}
-              width={100}
-              height={100}
-              style={{ borderRadius: "50%", marginTop: "0.5rem" }}
-            />
-          )}
+          <h1>Welcome, {userData.display_name}</h1>
+            <img src={userData.profile_image_url} />
+            <p><strong>Username:</strong> {userData.login}</p>
+            <p><strong>Type:</strong> {userData.type || "user"}</p>
+            <p><strong>Broadcaster:</strong> {userData.broadcaster_type || "none"}</p>
+            <p><strong>Bio:</strong> {userData.description}</p>
+            <p><strong>View Count:</strong> {userData.view_count}</p>
+            <p><strong>Joined:</strong> {new Date(userData.created_at).toLocaleDateString()}</p>
         </div>
       ) : !error ? (
         // If authenticated but userData not yet loaded and no error
         <p style={{ marginTop: "1rem" }}>Loading Twitch profile...</p>
       ) : null}
+      <button onClick={() => signOut()}>Sign out</button>
     </div>
   );
 }
