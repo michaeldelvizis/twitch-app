@@ -7,6 +7,7 @@ export default function Dashboard() {
   const [streamData, setStreamData] = useState(null);
   const [error, setError] = useState(null);
 
+  // Fetch user and initial stream data once on auth
   useEffect(() => {
     if (status !== "authenticated") return;
 
@@ -64,6 +65,46 @@ export default function Dashboard() {
 
     fetchUserAndStream();
   }, [status, session]);
+
+  // Poll stream data every 30 seconds ONLY if stream is live
+  useEffect(() => {
+    if (!session?.accessToken || !userData?.id || !streamData) {
+      // No live stream or missing data, no polling
+      return;
+    }
+
+    async function fetchStream() {
+      try {
+        const res = await fetch("/api/streamStatus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: session.accessToken, userId: userData.id }),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          setError(errorData.error || `Failed to fetch stream: ${res.status}`);
+          setStreamData(null); // stop polling if error
+          return;
+        }
+
+        const streamDataJson = await res.json();
+        if (Array.isArray(streamDataJson.data) && streamDataJson.data.length > 0) {
+          setStreamData(streamDataJson.data[0]);
+        } else {
+          // Stream went offline — stop polling
+          setStreamData(null);
+        }
+      } catch (e) {
+        console.error("Fetch error:", e);
+        setError("Network error fetching stream");
+        setStreamData(null);
+      }
+    }
+
+    const interval = setInterval(fetchStream, 30000); // 30 seconds
+    return () => clearInterval(interval);
+  }, [session, userData, streamData]);
 
   if (status === "loading") {
     return <p>Loading session...</p>;

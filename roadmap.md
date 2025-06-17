@@ -6,10 +6,14 @@ This project is a full-stack dashboard for streamers. It will integrate with the
 
 ## Milestone 1: Twitch OAuth & Stream Connection
 
-- [ ] Implement Twitch OAuth login
-- [ ] Authenticate user and store access tokens securely
-- [ ] Fetch basic stream metadata (title, uptime, category)
-- [ ] Show live stream status on dashboard
+- [x] Implement Twitch OAuth login
+- [x] Authenticate user and store access tokens securely
+- [x] Fetch basic stream metadata (title, uptime, category)
+- [x] Show live stream status on dashboard
+- [ ] Scheduled start time of your next stream
+- [ ] followers count / gift count
+- [ ] automatic refreshing
+
 
 ---
 
@@ -21,14 +25,6 @@ This project is a full-stack dashboard for streamers. It will integrate with the
 - [ ] Display live chat feed in dashboard
 - [ ] Basic metrics: total messages, unique chatters
 
----
-
-## Milestone 3: Stream Tracker Controls
-
-- [ ] Add “Start Stream” and “End Stream” controls
-- [ ] Associate all stats with individual stream sessions
-- [ ] Allow user to toggle chat logging + stat tracking manually
-- [ ] Save stream session metadata in backend
 
 ---
 
